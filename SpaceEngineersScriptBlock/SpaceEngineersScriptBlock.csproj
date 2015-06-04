@@ -67,7 +67,6 @@
     <Compile Include="AirLockControl.cs" />
     <Compile Include="BlockScriptBase.cs" />
     <Compile Include="IBlockScript.cs" />
-    <Compile Include="Minified.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
