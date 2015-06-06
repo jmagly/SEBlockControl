@@ -69,10 +69,9 @@
   <ItemGroup>
     <Compile Include="AirLockControl.cs" />
     <Compile Include="BlockScriptBase.cs" />
-    <Compile Include="HackinAboutControl.cs" />
+    <Compile Include="CommandForwardControl.cs" />
     <Compile Include="Log4SEControl.cs" />
     <Compile Include="IBlockScript.cs" />
-    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

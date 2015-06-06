@@ -10,6 +10,9 @@
     using VRage;
     using VRageMath;
     
+    /// <summary>
+    /// Control code to allow for forwarding of a recieved argument list to a specificed programmable block(s)
+    /// </summary>
     public class CommandForwardControl : BlockScriptBase
     {
         public CommandForwardControl(IMyGridTerminalSystem gts) : base(gts) { }

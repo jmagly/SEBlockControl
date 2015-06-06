@@ -10,6 +10,9 @@
     using VRage;
     using VRageMath;
 
+    /// <summary>
+    /// Simple airlock control script with 3 state control and pressure checks to prevent bad access. 
+    /// </summary>
     public class AirlockControl : BlockScriptBase
     {
         public AirlockControl(IMyGridTerminalSystem gts) : base(gts) { }

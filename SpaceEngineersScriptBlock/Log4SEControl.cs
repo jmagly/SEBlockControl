@@ -10,6 +10,9 @@
     using VRage;
     using VRageMath;
 
+    /// <summary>
+    /// Text Panel control code that simulates the behavaior of OSS projects like log4net and log4j
+    /// </summary>
     public class Log4SEControl : BlockScriptBase 
     {
         public Log4SEControl(IMyGridTerminalSystem gts) : base(gts) { }
@@ -25,6 +28,9 @@
         }
 
         #region Game Code
+        /// <summary>
+        /// Data class for passing around message data
+        /// </summary>
         private class ExecutionContext
         {
             public string Name { get; set; }
@@ -32,6 +38,9 @@
             public string Message { get; set; }
         }
 
+        /// <summary>
+        /// Psudeo-Enum for message severity
+        /// </summary>
         private struct MessageSeverity
         {
             public const string Debug = "Debug";
@@ -166,7 +175,7 @@
         // --severity::Error --message::ERROR - someththing bad has happened - fix it before it gets worse
         // --severity::Fatal --message::FATAL - somethething REALL bas has happened - ABANDON SHIP!
         // --forwardTo::CPU-OfficeDev1 --severity::Fatal --message::FATAL - somethething REALL bas has happened - ABANDON SHIP!
-        // 
+        
         void Main(string args)
         {
             ExecuteBlockScript(Init(args));
@@ -236,6 +245,10 @@
             Test("Time since last exec:{0}", ElapsedTime.ToString(@"d\.hh\:mm\:ss"));
         }
 
+        /// <summary>
+        /// If any test displays are detected they are configured and started. Test displays are purely for troubleshooting the logging system 
+        /// and should not be used or enabled during normal operations.
+        /// </summary>
         private void SetupTestDisplays()
         {
             if (initialized)
@@ -264,6 +277,11 @@
             WriteNamesToTest(testDisplays);
         }
 
+        /// <summary>
+        /// Splits the arg string into context data
+        /// </summary>
+        /// <param name="args">args to process</param>
+        /// <returns>context data</returns>
         private ExecutionContext ProcessArgs(string args)
         {
             Test("recievedArgs = {0}", args);
@@ -281,6 +299,11 @@
             return new ExecutionContext() { Name = displaySystemName, Severity = severity, Message = message };
         }
 
+        /// <summary>
+        /// Locates, "Connects" and configures hardware related to the system
+        /// </summary>
+        /// <param name="context">context to use</param>
+        /// <returns>context data</returns>
         private ExecutionContext InitializeResources(ExecutionContext context)
         {
             if (initialized)
@@ -576,6 +599,7 @@
 
                 var newMessage = text == "" ? message : text + "\n" + message;
 
+                // Screen scrolling, use "NoScroll" in name of text panel to prevent scrolling. 
                 if (!panel.CustomName.Contains(NoScrollOption))
                 {
                     var fontsize = panel.GetValue<Single>("FontSize");
@@ -593,6 +617,12 @@
             }
         }
 
+        /// <summary>
+        /// Screen scrolling support - trims the top lines of a string to simulate a rolling screen based on a provided font size calculation
+        /// </summary>
+        /// <param name="text">text to process</param>
+        /// <param name="maxLines">maximum number of lines allowed</param>
+        /// <returns>truncated string removing first lines</returns>
         private string RemoveTopLines(string text, int maxLines)
         {
             List<string> lines = new List<string>();

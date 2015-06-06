@@ -3,10 +3,12 @@ This project strives to make development with the programmable block easier and 
 
 Current Features: 
 - Simple Airlock control programmable block - can leverage a room of unlimited size with as many doors, vents and other controls as desired. Supports scrolling LCD status input
+- Log4SE Text Panel control - Makes text panels operate similar to how Log4net and log4j work, includes severity and broadcast to infinite panels.
+- Base testing classes using new IMyGridProgram for easier/more standard injection and control
 - Initial setup/testing of using testing frameworks to exercise programmable block code (currently using MSTest)
 
 # Development Tools
-.NET code editors, compilers and testers are available for Windows, OSX and Linux systems at the [Visual Studio](https://www.visualstudio.com/) home page and the [MonoDevelop)[http://www.monodevelop.com] home page.
+.NET code editors, compilers and testers are available for Windows, OSX and Linux systems at the [Visual Studio](https://www.visualstudio.com/) home page and the [MonoDevelop](http://www.monodevelop.com) home page.
 
 Free editions of .NET IDEs:
 - For a desktop experience on Windows try [Visual Studio Community Edition](https://www.visualstudio.com/vs-2015-product-editions)
