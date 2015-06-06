@@ -1,12 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace SpaceEngineersScriptBlock
+﻿namespace SpaceEngineersScriptBlock
 {
-    public interface IBlockScript
+    using System;
+
+    using Sandbox.ModAPI;
+
+    public interface IBlockScript : IMyGridProgram
     {
         void MainMethod(string argument);
         void CleanUp();

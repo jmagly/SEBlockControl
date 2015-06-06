@@ -10,9 +10,9 @@
     using VRage;
     using VRageMath;
 
-    public class DisplayControl : BlockScriptBase
+    public class Log4SEControl : BlockScriptBase 
     {
-        public DisplayControl(IMyGridTerminalSystem gts) : base(gts) { }
+        public Log4SEControl(IMyGridTerminalSystem gts) : base(gts) { }
 
         public override void MainMethod(string argument)
         {
@@ -25,6 +25,13 @@
         }
 
         #region Game Code
+        private class ExecutionContext
+        {
+            public string Name { get; set; }
+            public string Severity { get; set; }
+            public string Message { get; set; }
+        }
+
         private struct MessageSeverity
         {
             public const string Debug = "Debug";
@@ -38,6 +45,16 @@
             private MessageSeverity(string type)
             {
                 this.type = type;
+            }
+
+            public static implicit operator MessageSeverity(string type)
+            {
+                return new MessageSeverity(type);
+            }
+
+            public static explicit operator string(MessageSeverity type)
+            {
+                return type.ToString();
             }
 
             public static bool operator ==(string left, MessageSeverity right)
@@ -87,10 +104,18 @@
                 return base.GetHashCode();
             }
         }
+        
         private const int TextLinesPerFontPoint = 17;
 
         private const string ArgPrefix = "--";
         private const string KeyValuePairSeparator = "::";
+
+        private const string InitializeParameterName = "--initialize";
+
+        private const string ControlDebugDisplayName = "SEBlockControl::Test::Log4SEControl";
+
+        private const string DefaultDisplaySystemName = "LCD";
+        private const string DefaultMessage = "";
 
         public const string DebugBlockName = MessageSeverity.Debug;
         public const string InfoBlockName = MessageSeverity.Info;
@@ -107,19 +132,13 @@
         public const string SeverityArgKeyName = "severity";
         public const string MessageArgKeyName = "message";
 
-        private string displaySystemName = "LCD";
-        private string severity = WarningBlockName;
-        private string message = "";
-
-        private IMyProgrammableBlock Controller;
-
         private bool debugEnabled;
         private bool infoEnabled;
         private bool warningEnabled = true;
         private bool errorEnabled = true;
         private bool fatalEnabled = true;
-
-        private Dictionary<string, string> arguments;
+        
+        private bool testEnabled;
 
         private List<IMyTerminalBlock> debugDisplays;
         private List<IMyTerminalBlock> infoDisplays;
@@ -129,25 +148,34 @@
 
         private List<IMyTerminalBlock> testDisplays;
 
+        private bool initialized;
+
+        private int executionCount;
+
+        private IMyProgrammableBlock Controller
+        {
+            get { return Me; }
+        }
+
         // Arg Format
         //
         // --name::<MySystemName> --severity::<Debug|[Info]|Warning|error|fatal> --message::<MyMessage>
-        // --name::Airlock 002 --severity::Debug --message::This is my debug message, there are many like it but this one is mine!
-        //
+        // --severity::Debug --message::This is my debug message, there are many like it but this one is mine!
+        // --severity::Info --message::Here is some info, I hope it is what you need!
+        // --severity::Warn --message::WARNING - something kind of bad has happened - you might want to check this out
+        // --severity::Error --message::ERROR - someththing bad has happened - fix it before it gets worse
+        // --severity::Fatal --message::FATAL - somethething REALL bas has happened - ABANDON SHIP!
+        // --forwardTo::CPU-OfficeDev1 --severity::Fatal --message::FATAL - somethething REALL bas has happened - ABANDON SHIP!
+        // 
         void Main(string args)
         {
-            args = args.Trim();
+            ExecuteBlockScript(Init(args));
+        }
 
-            var panels = new List<IMyTerminalBlock>();
-            GridTerminalSystem.GetBlocksOfType<IMyTextPanel>(panels);
-            testDisplays = panels.FindAll(d => d.CustomName.Contains("LCD - Airlock 002 Admin"));
-
-            WriteToDisplays("=============================================", testDisplays);
-            WriteToDisplays("recievedArgs = " + args, testDisplays);
-
-            arguments = ParseArguments(args);
-
-            Init();
+        private void ExecuteBlockScript(ExecutionContext context)
+        {
+            var severity = context.Severity;
+            var message = context.Message;
 
             switch (severity)
             {
@@ -180,31 +208,188 @@
             }
         }
 
+        private ExecutionContext Init(string args)
+        {
+            initialized = initialized && !args.Contains(InitializeParameterName);
+
+            var context = InitializeResources(InitializeExecutionContext(args));
+            initialized = true;
+
+            return context;
+        }
+
+        private ExecutionContext InitializeExecutionContext(string args)
+        {
+            executionCount++;
+            SetupTestDisplays();
+            var context = ProcessArgs(args);
+
+            PreExeuctionReport(context);
+
+            return context;
+        }
+
+        private void PreExeuctionReport(ExecutionContext context)
+        {
+            Test("Executing process on controller {0}", Controller.CustomName);
+            Test("Execution Count:{0}", executionCount);
+            Test("Time since last exec:{0}", ElapsedTime.ToString(@"d\.hh\:mm\:ss"));
+        }
+
+        private void SetupTestDisplays()
+        {
+            if (initialized)
+            {
+                return;
+            }
+
+            var panels = new List<IMyTerminalBlock>();
+            GridTerminalSystem.GetBlocksOfType<IMyTextPanel>(panels);
+            testDisplays = panels.FindAll(d => d.CustomName.Contains(ControlDebugDisplayName));
+
+            testEnabled = testDisplays.Count > 0;
+            
+            if (!testEnabled)
+            {
+                return;
+            }
+
+            ClearTestDisplays();
+
+            Test("===========================================================");
+            Test("-----==== Initializing Log4SEControl v0.0.1 ALPHA ====-----");
+            Test("===========================================================");
+
+            Test("test displays found: {0}", testDisplays.Count);
+            WriteNamesToTest(testDisplays);
+        }
+
+        private ExecutionContext ProcessArgs(string args)
+        {
+            Test("recievedArgs = {0}", args);
+
+            var arguments = ParseArguments(args);
+
+            var displaySystemName = arguments.ContainsKey(SystemNameArgKeyName) ? arguments[SystemNameArgKeyName] : DefaultDisplaySystemName;
+            var severity = arguments.ContainsKey(SeverityArgKeyName) ? arguments[SeverityArgKeyName] : WarningBlockName;
+            var message = arguments.ContainsKey(MessageArgKeyName) ? arguments[MessageArgKeyName] : DefaultMessage;
+
+            Test("Display System : {0}", displaySystemName);
+            Test("Severity : {0}", severity);
+            Test("Messages : {0}", message);
+
+            return new ExecutionContext() { Name = displaySystemName, Severity = severity, Message = message };
+        }
+
+        private ExecutionContext InitializeResources(ExecutionContext context)
+        {
+            if (initialized)
+            {
+                return context;
+            }
+
+            var controllerName = Controller.CustomName.ToUpper();
+            var systemName = context.Name;
+
+            debugEnabled = controllerName.Contains((DebugBlockName + KeyValuePairSeparator + EnabledSettingName).ToUpper());
+            infoEnabled = controllerName.Contains((InfoBlockName + KeyValuePairSeparator + EnabledSettingName).ToUpper());
+            warningEnabled = !controllerName.Contains((WarningBlockName + KeyValuePairSeparator + DisabledSettingName).ToUpper());
+            errorEnabled = !controllerName.Contains((ErrorBlockName + KeyValuePairSeparator + DisabledSettingName).ToUpper());
+            fatalEnabled = !controllerName.Contains((FatalBlockName + KeyValuePairSeparator + DisabledSettingName).ToUpper());
+
+            Test("debug:{0};info:{0};warn:{0};error:{0};fatal:{0}", debugEnabled, infoEnabled, warningEnabled, errorEnabled, fatalEnabled);
+            
+            var panels = new List<IMyTerminalBlock>();
+            GridTerminalSystem.GetBlocksOfType<IMyTextPanel>(panels);
+            panels = panels.FindAll(d => d.CustomName.Contains(systemName));
+
+            var defaultDisplays = panels.FindAll(
+                d => !d.CustomName.Contains(DebugBlockName)
+                && !d.CustomName.Contains(InfoBlockName)
+                && !d.CustomName.Contains(WarningBlockName)
+                && !d.CustomName.Contains(ErrorBlockName)
+                && !d.CustomName.Contains(FatalBlockName));
+
+            Test("Default Displays with System Name {0}:{1}", systemName, defaultDisplays.Count);
+            WriteNamesToTest(defaultDisplays);
+
+            if (debugEnabled)
+            {
+                debugDisplays = panels.FindAll(d => d.CustomName.Contains(DebugBlockName));
+                debugDisplays.AddRange(defaultDisplays);
+
+                Test("debug displays found:{0}", debugDisplays.Count);
+                WriteNamesToTest(debugDisplays);
+            }
+
+            if (infoEnabled)
+            {
+                infoDisplays = panels.FindAll(d => d.CustomName.Contains(InfoBlockName));
+                infoDisplays.AddRange(defaultDisplays);
+
+                Test("info displays found:{0}", infoDisplays.Count);
+                WriteNamesToTest(infoDisplays);
+            }
+
+            if (warningEnabled)
+            {
+                warningDisplays = panels.FindAll(d => d.CustomName.Contains(WarningBlockName));
+                warningDisplays.AddRange(defaultDisplays);
+
+                Test("warning displays found:{0}", warningDisplays.Count);
+                WriteNamesToTest(warningDisplays);
+            }
+
+            if (errorEnabled)
+            {
+                errorDisplays = panels.FindAll(d => d.CustomName.Contains(ErrorBlockName));
+                errorDisplays.AddRange(defaultDisplays);
+
+                Test("error displays found:{0}", errorDisplays.Count);
+                WriteNamesToTest(errorDisplays);                
+            }
+
+            if (fatalEnabled)
+            {
+                fatalDisplays = panels.FindAll(d => d.CustomName.Contains(FatalBlockName));
+                fatalDisplays.AddRange(defaultDisplays);
+
+                Test("fatal displays found:{0}", fatalDisplays.Count);
+                WriteNamesToTest(fatalDisplays);
+            }
+
+            Test("Log4SEControl Init Complete");
+
+            return context;
+        }
+
         private Dictionary<string, string> ParseArguments(string args)
         {
             if (args == null || args == "")
             {
-                return new Dictionary<string,string>();
+                return new Dictionary<string, string>();
             }
-
-            WriteToDisplays("Parsing Args", testDisplays);
 
             var argPairs = new List<string>(Split(args, ArgPrefix));
 
-            WriteToDisplays("Found args " + argPairs.Count, testDisplays);
+            Test("Parsing {0} args ", argPairs.Count);
 
             var retval = new Dictionary<string, string>();
             foreach (var pair in argPairs)
             {
-                WriteToDisplays("Parsing Arg Pair : " + pair, testDisplays);
-
                 var kvp = Split(pair, KeyValuePairSeparator);
 
-                WriteToDisplays("Pair Values : " + kvp.Length, testDisplays);
-                WriteToDisplays("Value 1 : " + kvp[0], testDisplays);
-                WriteToDisplays("Value 2 : " + kvp[1], testDisplays);
+                if (kvp.Length == 0)
+                {
+                    Echo("Invalid Argument String");
+                }
 
-                retval.Add(kvp[0], kvp[1]);
+                var key = kvp[0];
+                var value = kvp.Length == 2 ? kvp[1] : "";
+
+                Test("Key={0} : Value={1}", key, value);
+
+                retval.Add(key, value);
             }
 
             return retval;
@@ -212,8 +397,6 @@
 
         private string[] Split(string str, string separator)
         {
-            WriteToDisplays("Splitting Args", testDisplays);
-
             var data = str.Split(new string[] { separator }, StringSplitOptions.RemoveEmptyEntries);
 
             for (var i = 0; i < data.Length - 1; i++)
@@ -224,76 +407,15 @@
             return data;
         }
 
-        private void Init()
+        private void Test(string message = "", params object[] data)
         {
-            displaySystemName = arguments.ContainsKey(SystemNameArgKeyName) ? arguments[SystemNameArgKeyName] : displaySystemName;
-            severity = arguments.ContainsKey(SeverityArgKeyName) ? arguments[SeverityArgKeyName] : severity;
-            message = arguments.ContainsKey(MessageArgKeyName) ? arguments[MessageArgKeyName] : message;
-
-            WriteToDisplays("Display System : " + displaySystemName, testDisplays);
-            WriteToDisplays("Severity : " + severity, testDisplays);
-            WriteToDisplays("Messages : " + message, testDisplays);
-
-            var controllers = new List<IMyTerminalBlock>();
-            GridTerminalSystem.GetBlocksOfType<IMyProgrammableBlock>(controllers);
-            controllers = controllers.FindAll(d => d.CustomName.Contains(displaySystemName));
-
-
-            Controller = (IMyProgrammableBlock)controllers[0];
-
-            var controllerName = Controller.CustomName.ToUpper();
-
-            debugEnabled = controllerName.Contains((DebugBlockName + KeyValuePairSeparator + EnabledSettingName).ToUpper());
-            infoEnabled = controllerName.Contains((InfoBlockName + KeyValuePairSeparator + EnabledSettingName).ToUpper());
-            warningEnabled = !controllerName.Contains((WarningBlockName + KeyValuePairSeparator + DisabledSettingName).ToUpper());
-            errorEnabled = !controllerName.Contains((ErrorBlockName + KeyValuePairSeparator + DisabledSettingName).ToUpper());
-            fatalEnabled = !controllerName.Contains((FatalBlockName + KeyValuePairSeparator + DisabledSettingName).ToUpper());
-
-            WriteToDisplays("debugEnabled: " + debugEnabled, testDisplays);
-            WriteToDisplays("infoEnabled: " + infoEnabled, testDisplays);
-            WriteToDisplays("warningEnabled: " + warningEnabled, testDisplays);
-            WriteToDisplays("errorEnabled: " + errorEnabled, testDisplays);
-            WriteToDisplays("fatalEnabled: " + fatalEnabled, testDisplays);
-
-            var panels = new List<IMyTerminalBlock>();
-            GridTerminalSystem.GetBlocksOfType<IMyTextPanel>(panels);
-            panels = panels.FindAll(d => d.CustomName.Contains(displaySystemName));
-
-            if (debugEnabled)
+            if (!testEnabled)
             {
-                debugDisplays = panels.FindAll(d => d.CustomName.Contains(DebugBlockName));
-                WriteToDisplays("debug displays found: " + debugDisplays.Count, testDisplays);
-
+                return;
             }
 
-            if (infoEnabled)
-            {
-                infoDisplays = panels.FindAll(d => d.CustomName.Contains(InfoBlockName));
-                WriteToDisplays("info displays found: " + infoDisplays.Count, testDisplays);
-
-            }
-
-            if (warningEnabled)
-            {
-                warningDisplays = panels.FindAll(d => d.CustomName.Contains(WarningBlockName));
-                WriteToDisplays("warning displays found: " + warningDisplays.Count, testDisplays);
-
-            }
-
-            if (errorEnabled)
-            {
-                errorDisplays = panels.FindAll(d => d.CustomName.Contains(ErrorBlockName));
-                WriteToDisplays("error displays found: " + errorDisplays.Count, testDisplays);
-
-            }
-
-            if (fatalEnabled)
-            {
-                fatalDisplays = panels.FindAll(d => d.CustomName.Contains(FatalBlockName));
-                WriteToDisplays("fatal displays found: " + fatalDisplays.Count, testDisplays);
-
-            }
-
+            message = string.Format(message, data);
+            WriteToDisplays("TEST: " + message, testDisplays);
         }
 
         private void Debug(string message = "", params object[] data)
@@ -360,8 +482,26 @@
             ClearFatalDisplays();
         }
 
+        private void ClearTestDisplays()
+        {
+            if (!testEnabled)
+            {
+                return;
+            }
+
+            for (var i = 0; i < testDisplays.Count; i++)
+            {
+                ClearDisplay(testDisplays[i]);
+            }
+        }
+
         private void ClearDebugDisplays()
         {
+            if (!debugEnabled)
+            {
+                return;
+            }
+
             for (var i = 0; i < debugDisplays.Count; i++)
             {
                 ClearDisplay(debugDisplays[i]);
@@ -370,6 +510,11 @@
 
         private void ClearInfoDisplays()
         {
+            if (!infoEnabled)
+            {
+                return;
+            }
+
             for (var i = 0; i < infoDisplays.Count; i++)
             {
                 ClearDisplay(infoDisplays[i]);
@@ -378,6 +523,11 @@
 
         private void ClearWarningDisplays()
         {
+            if (!warningEnabled)
+            {
+                return;
+            }
+
             for (var i = 0; i < warningDisplays.Count; i++)
             {
                 ClearDisplay(warningDisplays[i]);
@@ -386,6 +536,11 @@
 
         private void ClearErrorDisplays()
         {
+            if (!errorEnabled)
+            {
+                return;
+            }
+
             for (var i = 0; i < errorDisplays.Count; i++)
             {
                 ClearDisplay(errorDisplays[i]);
@@ -394,6 +549,11 @@
 
         private void ClearFatalDisplays()
         {
+            if (!fatalEnabled)
+            {
+                return;
+            }
+
             for (var i = 0; i < fatalDisplays.Count; i++)
             {
                 ClearDisplay(fatalDisplays[i]);
@@ -436,7 +596,10 @@
         private string RemoveTopLines(string text, int maxLines)
         {
             List<string> lines = new List<string>();
-            System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(text, "^.*$", System.Text.RegularExpressions.RegexOptions.Multiline | System.Text.RegularExpressions.RegexOptions.RightToLeft);
+            System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(
+                text, 
+                "^.*$", 
+                System.Text.RegularExpressions.RegexOptions.Multiline | System.Text.RegularExpressions.RegexOptions.RightToLeft);
 
             while (match.Success && lines.Count < maxLines)
             {
@@ -445,6 +608,27 @@
             }
 
             return string.Join("\n", lines);
+        }
+
+        private void WriteNamesToTest(List<IMyTerminalBlock> blocks)
+        {
+            if (!testEnabled || blocks.Count <= 0)
+            {
+                return;
+            }
+
+            var message = "";
+            var separator = "";
+
+            for (var i = 0; i < blocks.Count; i++)
+            {
+                separator = i == 0 ? "" : ", ";
+
+                var block = blocks[i];
+                message = message + separator + block.CustomName;
+            }
+
+            Test(message);
         }
         #endregion
     }

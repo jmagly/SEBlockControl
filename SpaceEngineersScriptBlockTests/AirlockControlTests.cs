@@ -152,7 +152,7 @@ using System.Threading;
 
             var gts = CreateGrid();
             var control = this.airlockControl = new AirlockControl(gts);
-            control.MainMethod("");
+            control.Main("");
 
             /*foreach (var display in displayOutputs)
             {
@@ -177,7 +177,7 @@ using System.Threading;
 
             var gts = CreateGrid();
             var control = this.airlockControl = new AirlockControl(gts);
-            control.MainMethod(AirlockControl.ExteriorAccessName);
+            control.Main(AirlockControl.ExteriorAccessName);
 
             var expectedQueue = CreateStartQueue();
 
@@ -204,7 +204,7 @@ using System.Threading;
 
             var gts = CreateGrid();
             var control = this.airlockControl = new AirlockControl(gts);
-            control.MainMethod(AirlockControl.InteriorAccessName);
+            control.Main(AirlockControl.InteriorAccessName);
 
             // Wait for depressurization
             System.Threading.Thread.Sleep(50);
@@ -236,12 +236,12 @@ using System.Threading;
 
             var gts = CreateGrid();
             var control = this.airlockControl = new AirlockControl(gts);
-            control.MainMethod(AirlockControl.ExteriorAccessName);
+            control.Main(AirlockControl.ExteriorAccessName);
 
             // Wait for depressurization
             System.Threading.Thread.Sleep(50);
 
-            control.MainMethod(AirlockControl.TransferAccessName);
+            control.Main(AirlockControl.TransferAccessName);
 
             // Wait for depressurization
             System.Threading.Thread.Sleep(50);
@@ -278,11 +278,11 @@ using System.Threading;
 
             var gts = CreateGrid();
             var control = this.airlockControl = new AirlockControl(gts);
-            control.MainMethod(AirlockControl.InteriorAccessName);
+            control.Main(AirlockControl.InteriorAccessName);
 
             System.Threading.Thread.Sleep(50);
 
-            control.MainMethod(AirlockControl.TransferAccessName);
+            control.Main(AirlockControl.TransferAccessName);
 
             System.Threading.Thread.Sleep(50);
 
@@ -377,7 +377,7 @@ using System.Threading;
                                         // Minimum wait time 50 milliseconds
                                         System.Threading.Thread.Sleep(10);
                                         this.o2level = this.o2level == 0 ? 100 : 0;
-                                        this.airlockControl.MainMethod(string.Empty);
+                                        this.airlockControl.Main(string.Empty);
                                    }
 
                                 }, System.Threading.Tasks.TaskCreationOptions.LongRunning).Start();

@@ -10,7 +10,7 @@ using System.Text;
 //http://steamcommunity.com/sharedfiles/filedetails/?id=360966557
 using Sandbox.ModAPI.Ingame; 
 using Sandbox.ModAPI.Interfaces;
-using Sandbox.Common.ObjectBuilders;
+using Sandbox.Common;
 using VRage;
 using VRageMath;
 namespace SpaceEngineersScripting
