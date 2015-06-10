@@ -151,19 +151,19 @@
         public const string MessageArgKeyName = "message";
         public const string ClearKeyName = "clear";
 
-        private bool debugEnabled;
-        private bool infoEnabled;
-        private bool warningEnabled = true;
-        private bool errorEnabled = true;
-        private bool fatalEnabled = true;
+        private Dictionary<string, bool> logTypeEnabled =
+            new Dictionary<string, bool>()
+            {
+                { MessageSeverity.Debug, false },
+                { MessageSeverity.Info, false },
+                { MessageSeverity.Warn, true },
+                { MessageSeverity.Error, true },
+                { MessageSeverity.Fatal, true },
+            };
         
         private bool testEnabled;
 
-        private List<IMyTerminalBlock> debugDisplays;
-        private List<IMyTerminalBlock> infoDisplays;
-        private List<IMyTerminalBlock> errorDisplays;
-        private List<IMyTerminalBlock> warningDisplays;
-        private List<IMyTerminalBlock> fatalDisplays;
+        private Dictionary<string, List<IMyTerminalBlock>> displays = new Dictionary<string, List<IMyTerminalBlock>>();
 
         private List<IMyTerminalBlock> testDisplays;
 
@@ -207,35 +207,7 @@
 
             Test("Showing {0} with message {1}", severity, message);
 
-            switch (severity)
-            {
-                case (MessageSeverity.Debug):
-                    {
-                        Debug(message);
-                        break;
-                    }
-                case (MessageSeverity.Info):
-                    {
-                        Info(message);
-                        break;
-                    }
-                case (MessageSeverity.Error):
-                    {
-                        Error(message);
-                        break;
-                    }
-                case (MessageSeverity.Fatal):
-                    {
-                        Fatal(message);
-                        break;
-                    }
-                case (MessageSeverity.Warn):
-                default:
-                    {
-                        Warn(message);
-                        break;
-                    }
-            }
+            WriteLogMessage(severity, message);
         }
 
         private ExecutionContext Init(string args)
@@ -344,13 +316,23 @@
             var controllerName = Controller.CustomName.ToUpper();
             var systemName = context.Name;
 
-            debugEnabled = controllerName.Contains((DebugBlockName + KeyValuePairSeparator + EnabledSettingName).ToUpper());
-            infoEnabled = controllerName.Contains((InfoBlockName + KeyValuePairSeparator + EnabledSettingName).ToUpper());
-            warningEnabled = !controllerName.Contains((WarningBlockName + KeyValuePairSeparator + DisabledSettingName).ToUpper());
-            errorEnabled = !controllerName.Contains((ErrorBlockName + KeyValuePairSeparator + DisabledSettingName).ToUpper());
-            fatalEnabled = !controllerName.Contains((FatalBlockName + KeyValuePairSeparator + DisabledSettingName).ToUpper());
+            logTypeEnabled[MessageSeverity.Debug] = controllerName.Contains((DebugBlockName + KeyValuePairSeparator + EnabledSettingName).ToUpper());
+            logTypeEnabled[MessageSeverity.Info] = controllerName.Contains((InfoBlockName + KeyValuePairSeparator + EnabledSettingName).ToUpper());
+            logTypeEnabled[MessageSeverity.Warn] = !controllerName.Contains((WarningBlockName + KeyValuePairSeparator + DisabledSettingName).ToUpper());
+            logTypeEnabled[MessageSeverity.Error] = !controllerName.Contains((ErrorBlockName + KeyValuePairSeparator + DisabledSettingName).ToUpper());
+            logTypeEnabled[MessageSeverity.Fatal] = !controllerName.Contains((FatalBlockName + KeyValuePairSeparator + DisabledSettingName).ToUpper());
 
-            Test("debug:{0};info:{0};warn:{0};error:{0};fatal:{0}", debugEnabled, infoEnabled, warningEnabled, errorEnabled, fatalEnabled);
+            if (testEnabled)
+            {
+                var testMessage = "";
+                var separator = "";
+                foreach (var kvp in logTypeEnabled)
+                {
+                    testMessage += string.Format("{0}{1}:{2}", separator, kvp.Key, kvp.Value);
+                }
+
+                Test(testMessage);
+            }
             
             var panels = new List<IMyTerminalBlock>();
             GridTerminalSystem.GetBlocksOfType<IMyTextPanel>(panels);
@@ -367,49 +349,20 @@
             Test("Default Displays with System Name {0}:{1}", systemName, defaultDisplays.Count);
             WriteNamesToTest(defaultDisplays);
 
-            if (debugEnabled)
+            foreach (var kvp in logTypeEnabled)
             {
-                debugDisplays = panels.FindAll(d => d.CustomName.Contains(DebugBlockName));
-                debugDisplays.AddRange(defaultDisplays);
+                if (!kvp.Value)
+                {
+                    continue;
+                }
 
-                Test("debug displays found:{0}", debugDisplays.Count);
-                WriteNamesToTest(debugDisplays);
-            }
+                var logDisplays = panels.FindAll(d => d.CustomName.Contains(DebugBlockName));
+                logDisplays.AddRange(defaultDisplays);
 
-            if (infoEnabled)
-            {
-                infoDisplays = panels.FindAll(d => d.CustomName.Contains(InfoBlockName));
-                infoDisplays.AddRange(defaultDisplays);
+                Test("{0} displays found:{1}", kvp.Key, logDisplays.Count);
+                WriteNamesToTest(logDisplays);
 
-                Test("info displays found:{0}", infoDisplays.Count);
-                WriteNamesToTest(infoDisplays);
-            }
-
-            if (warningEnabled)
-            {
-                warningDisplays = panels.FindAll(d => d.CustomName.Contains(WarningBlockName));
-                warningDisplays.AddRange(defaultDisplays);
-
-                Test("warning displays found:{0}", warningDisplays.Count);
-                WriteNamesToTest(warningDisplays);
-            }
-
-            if (errorEnabled)
-            {
-                errorDisplays = panels.FindAll(d => d.CustomName.Contains(ErrorBlockName));
-                errorDisplays.AddRange(defaultDisplays);
-
-                Test("error displays found:{0}", errorDisplays.Count);
-                WriteNamesToTest(errorDisplays);                
-            }
-
-            if (fatalEnabled)
-            {
-                fatalDisplays = panels.FindAll(d => d.CustomName.Contains(FatalBlockName));
-                fatalDisplays.AddRange(defaultDisplays);
-
-                Test("fatal displays found:{0}", fatalDisplays.Count);
-                WriteNamesToTest(fatalDisplays);
+                displays.Add(kvp.Key, logDisplays);
             }
 
             Test("Log4SEControl Init Complete");
@@ -470,69 +423,26 @@
             WriteToDisplays("TEST: " + message, testDisplays);
         }
 
-        private void Debug(string message = "", params object[] data)
+        private void WriteLogMessage(MessageSeverity severity, string message = "", params object[] data)
         {
-            if (!debugEnabled)
+            if (!logTypeEnabled[(string)severity])
             {
                 return;
             }
 
             message = string.Format(message, data);
-            WriteToDisplays("Debug: " + message, debugDisplays);
-        }
-
-        private void Info(string message = "", params object[] data)
-        {
-            if (!infoEnabled)
-            {
-                return;
-            }
-
-            message = string.Format(message, data);
-            WriteToDisplays("Info: " + message, infoDisplays);
-        }
-
-        private void Warn(string message = "", params object[] data)
-        {
-            if (!warningEnabled)
-            {
-                return;
-            }
-
-            message = string.Format(message, data);
-            WriteToDisplays("Warn: " + message, warningDisplays);
-        }
-
-        private void Error(string message = "", params object[] data)
-        {
-            if (!errorEnabled)
-            {
-                return;
-            }
-
-            message = string.Format(message, data);
-            WriteToDisplays("Error: " + message, errorDisplays);
-        }
-
-        private void Fatal(string message = "", params object[] data)
-        {
-            if (!fatalEnabled)
-            {
-                return;
-            }
-
-            message = string.Format(message, data);
-            WriteToDisplays("Fatal: " + message, fatalDisplays);
+            WriteToDisplays(string.Format("{0}: {1}", severity, message), displays[(string)severity]);
         }
 
         private void ClearDisplays()
         {
             Test("Clearing all displays");
-            ClearDebugDisplays();
-            ClearInfoDisplays();
-            ClearWarningDisplays();
-            ClearErrorDisplays();
-            ClearFatalDisplays();
+
+            foreach (var kvp in logTypeEnabled)
+            {
+                ClearDisplays(kvp.Key);
+            }
+
         }
 
         private void ClearTestDisplays()
@@ -548,68 +458,16 @@
             }
         }
 
-        private void ClearDebugDisplays()
+        private void ClearDisplays(MessageSeverity severity)
         {
-            if (!debugEnabled)
+            if (!logTypeEnabled[(string)severity])
             {
                 return;
             }
 
-            for (var i = 0; i < debugDisplays.Count; i++)
+            for (var i = 0; i < displays[(string)severity].Count; i++)
             {
-                ClearDisplay(debugDisplays[i]);
-            }
-        }
-
-        private void ClearInfoDisplays()
-        {
-            if (!infoEnabled)
-            {
-                return;
-            }
-
-            for (var i = 0; i < infoDisplays.Count; i++)
-            {
-                ClearDisplay(infoDisplays[i]);
-            }
-        }
-
-        private void ClearWarningDisplays()
-        {
-            if (!warningEnabled)
-            {
-                return;
-            }
-
-            for (var i = 0; i < warningDisplays.Count; i++)
-            {
-                ClearDisplay(warningDisplays[i]);
-            }
-        }
-
-        private void ClearErrorDisplays()
-        {
-            if (!errorEnabled)
-            {
-                return;
-            }
-
-            for (var i = 0; i < errorDisplays.Count; i++)
-            {
-                ClearDisplay(errorDisplays[i]);
-            }
-        }
-
-        private void ClearFatalDisplays()
-        {
-            if (!fatalEnabled)
-            {
-                return;
-            }
-
-            for (var i = 0; i < fatalDisplays.Count; i++)
-            {
-                ClearDisplay(fatalDisplays[i]);
+                ClearDisplay(displays[(string)severity][i]);
             }
         }
 
@@ -685,7 +543,7 @@
                 var block = blocks[i];
                 message = message + separator + block.CustomName;
 
-                separator = " ";
+                separator = " | ";
             }
 
             Test(message);
