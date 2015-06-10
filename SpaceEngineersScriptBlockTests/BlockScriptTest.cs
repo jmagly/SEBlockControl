@@ -1,11 +1,16 @@
 ﻿namespace SpaceEngineersScriptBlockTests
 {
     using System;
-    using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Moq;
-    using Sandbox.ModAPI.Ingame;
     using System.Collections.Generic;
+
+    using VRage.Collections;
+
+    using Sandbox.ModAPI.Ingame;
     using Sandbox.ModAPI.Interfaces;
+
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+    using Moq;
 
     public abstract class BlockScriptTest
     {
@@ -34,7 +39,7 @@
             return CreateGridMock().Object;
         }
 
-        protected Mock<IMyGridTerminalSystem> CreateGridMock()
+        protected virtual Mock<IMyGridTerminalSystem> CreateGridMock()
         {
             var mockGrid = new Mock<IMyGridTerminalSystem>();
 
@@ -94,6 +99,8 @@
                     return this.displayOutputs[name];
                 });
 
+            mock.Setup(p => p.ToString()).Returns(name);
+
             return mock;
         }
 
@@ -135,6 +142,20 @@
             mockAction.Setup(a => a.Apply(It.IsAny<IMyCubeBlock>()))
                 .Callback<IMyCubeBlock>((block) => this.executionLog.Enqueue(executedAction));
 
+            mockAction.Setup(a => a.Apply(It.IsAny<IMyCubeBlock>(), It.IsAny<ListReader<TerminalActionParameter>>()))
+                .Callback<IMyCubeBlock, ListReader<TerminalActionParameter>>(
+                (block, parameters) =>
+                {
+                    executedAction.Parameters = new List<TerminalActionParameter>();
+                    
+                    foreach (var param in parameters)
+                    {
+                        executedAction.Parameters.Add(param);
+                    }
+
+                    this.executionLog.Enqueue(executedAction);
+                });
+
             mock.Setup(b => b.GetActionWithName(It.IsAny<string>())).Returns<string>((an) =>
             {
                 executedAction = new ExecutedAction() { Name = name, Action = an };
@@ -152,6 +173,7 @@
         {
             public string Name { get; set; }
             public string Action { get; set; }
+            public List<TerminalActionParameter> Parameters { get; set; }
 
             public override bool Equals(object obj)
             {

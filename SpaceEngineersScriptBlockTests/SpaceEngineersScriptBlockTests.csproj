@@ -86,6 +86,7 @@
   <ItemGroup>
     <Compile Include="AirlockControlTests.cs" />
     <Compile Include="BlockScriptTest.cs" />
+    <Compile Include="CommandForwardControlTests.cs" />
     <Compile Include="Log4SEControlTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

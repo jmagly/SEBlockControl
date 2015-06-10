@@ -11,7 +11,7 @@
     using VRageMath;
     
     /// <summary>
-    /// Control code to allow for forwarding of a recieved argument list to a specificed programmable block(s)
+    /// Control code to allow for forwarding of a recieved argument list to a specified programmable block(s)
     /// </summary>
     public class CommandForwardControl : BlockScriptBase
     {
@@ -64,25 +64,23 @@
 
             context.Remove(ForwardToKeyName);
 
-            //var controllers = new List<IMyTerminalBlock>();
-            //GridTerminalSystem.GetBlocksOfType<IMyProgrammableBlock>(controllers);
-            //controllers = controllers.FindAll(d => d.CustomName.Contains(forwardTo));
-            var block = GridTerminalSystem.GetBlockWithName(forwardTo);
+            var controllers = new List<IMyTerminalBlock>();
+            GridTerminalSystem.GetBlocksOfType<IMyProgrammableBlock>(controllers);
+            controllers = controllers.FindAll(d => d.CustomName.Contains(forwardTo));
 
-            if (block == null)
+            var args = BuildArgs(context);
+            foreach (var controller in controllers)
             {
-                Echo("Unable to locate block " + forwardTo);
+                CallBlockScript(controller, args);
             }
+        }
 
+        private void CallBlockScript(IMyTerminalBlock block, string args)
+        {
             terminalParams.Clear();
-            terminalParams.Add(TerminalActionParameter.Get(this.args));
+            terminalParams.Add(TerminalActionParameter.Get(args));
 
-            ExecuteAction(block, RunActionName, new List<TerminalActionParameter>() { TerminalActionParameter.Get(this.args) });
-
-            /*foreach (var block in blocks)
-            {
-                ExecuteAction(block, RunActionName, new List<TerminalActionParameter>() { TerminalActionParameter.Get(this.args) });
-            }*/
+            ExecuteAction(block, RunActionName, new List<TerminalActionParameter>() { TerminalActionParameter.Get(args) });
         }
 
         private string BuildArgs(Dictionary<string, string> data)
@@ -96,7 +94,7 @@
 
                 if (!string.IsNullOrEmpty(kvp.Value))
                 {
-                    kvpString += KeyValuePairSeparator;
+                    kvpString += KeyValuePairSeparator + kvp.Value;
                 }
 
                 retVal += kvpString;
@@ -110,11 +108,10 @@
         {
             if (parameters == null)
             {
-                block.GetActionWithName(action).Apply(block);
+                block.ApplyAction(action);
             }
 
             block.ApplyAction(action, parameters);
-            //block.GetActionWithName(action).Apply(block, parameters);
         }
 
         private static void ExecuteAction(List<IMyTerminalBlock> blocks, string action, List<TerminalActionParameter> parameters = null)
@@ -155,7 +152,7 @@
                 var key = kvp[0];
                 var value = kvp.Length == 2 ? kvp[1] : "";
 
-                retval.Add(key.Trim(), value.Trim());
+                retval.Add(key, value);
             }
 
             return retval;

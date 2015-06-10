@@ -1,6 +1,9 @@
 ﻿namespace SpaceEngineersScriptBlock
 {
     using System;
+    using System.Collections.Generic;
+    using System.Collections;
+
     using Sandbox.ModAPI;
 
     /// <summary>
@@ -8,6 +11,8 @@
     /// </summary>
     public interface IBlockScript : IMyGridProgram
     {
+        Queue<string> EchoOutput { get; }
+
         /// <summary>
         /// Wrapper for calling void Main(string)
         /// </summary>
@@ -15,7 +20,7 @@
         void MainMethod(string argument);
 
         /// <summary>
-        /// Post test cleanup - TODO: Depracate
+        /// Post test cleanup - TODO: Deprecate
         /// </summary>
         void CleanUp();
     }

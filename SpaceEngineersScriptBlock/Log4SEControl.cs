@@ -11,7 +11,7 @@
     using VRageMath;
 
     /// <summary>
-    /// Text Panel control code that simulates the behavaior of OSS projects like log4net and log4j
+    /// Text Panel control code that simulates the behavior of OSS projects like log4net and log4j
     /// </summary>
     public class Log4SEControl : BlockScriptBase 
     {
@@ -36,6 +36,15 @@
             public string Name { get; set; }
             public string Severity { get; set; }
             public string Message { get; set; }
+            public bool Clear { get; set; }
+            public bool ClearOnly { get; set; }
+
+            public override string ToString()
+            {
+                return (Clear ? "Clear " : "")
+                    + (ClearOnly ? "Only " : "") 
+                    + string.Format("Name:{0};Severity:{1};Message:{2}", Name, Severity, Message);
+            }
         }
 
         /// <summary>
@@ -114,6 +123,7 @@
             }
         }
         
+        private const string emptyString = "";
         private const int TextLinesPerFontPoint = 17;
 
         private const string ArgPrefix = "--";
@@ -124,7 +134,6 @@
         private const string ControlDebugDisplayName = "SEBlockControl::Test::Log4SEControl";
 
         private const string DefaultDisplaySystemName = "LCD";
-        private const string DefaultMessage = "";
 
         public const string DebugBlockName = MessageSeverity.Debug;
         public const string InfoBlockName = MessageSeverity.Info;
@@ -140,6 +149,7 @@
         public const string SystemNameArgKeyName = "name";
         public const string SeverityArgKeyName = "severity";
         public const string MessageArgKeyName = "message";
+        public const string ClearKeyName = "clear";
 
         private bool debugEnabled;
         private bool infoEnabled;
@@ -166,25 +176,36 @@
             get { return Me; }
         }
 
-        // Arg Format
-        //
-        // --name::<MySystemName> --severity::<Debug|[Info]|Warning|error|fatal> --message::<MyMessage>
-        // --severity::Debug --message::This is my debug message, there are many like it but this one is mine!
-        // --severity::Info --message::Here is some info, I hope it is what you need!
-        // --severity::Warn --message::WARNING - something kind of bad has happened - you might want to check this out
-        // --severity::Error --message::ERROR - someththing bad has happened - fix it before it gets worse
-        // --severity::Fatal --message::FATAL - somethething REALL bas has happened - ABANDON SHIP!
-        // --forwardTo::CPU-OfficeDev1 --severity::Fatal --message::FATAL - somethething REALL bas has happened - ABANDON SHIP!
-        
         void Main(string args)
         {
-            ExecuteBlockScript(Init(args));
+            Echo(args);
+
+            try
+            {
+                ExecuteBlockScript(Init(args));
+            }
+            catch (Exception ex)
+            {
+                Echo(ex.Message);
+            }
         }
 
         private void ExecuteBlockScript(ExecutionContext context)
         {
             var severity = context.Severity;
             var message = context.Message;
+
+            if (context.Clear)
+            {
+                ClearDisplays();
+            }
+
+            if (context.ClearOnly)
+            {
+                return;
+            }
+
+            Test("Showing {0} with message {1}", severity, message);
 
             switch (severity)
             {
@@ -221,7 +242,8 @@
         {
             initialized = initialized && !args.Contains(InitializeParameterName);
 
-            var context = InitializeResources(InitializeExecutionContext(args));
+            var context = InitializeExecutionContext(args);
+            InitializeResources(context);
             initialized = true;
 
             return context;
@@ -231,6 +253,7 @@
         {
             executionCount++;
             SetupTestDisplays();
+
             var context = ProcessArgs(args);
 
             PreExeuctionReport(context);
@@ -270,7 +293,7 @@
             ClearTestDisplays();
 
             Test("===========================================================");
-            Test("-----==== Initializing Log4SEControl v0.0.1 ALPHA ====-----");
+            Test("-----==== Initializing Log4SEControl v0.0.9 ALPHA ====-----");
             Test("===========================================================");
 
             Test("test displays found: {0}", testDisplays.Count);
@@ -288,15 +311,20 @@
 
             var arguments = ParseArguments(args);
 
-            var displaySystemName = arguments.ContainsKey(SystemNameArgKeyName) ? arguments[SystemNameArgKeyName] : DefaultDisplaySystemName;
-            var severity = arguments.ContainsKey(SeverityArgKeyName) ? arguments[SeverityArgKeyName] : WarningBlockName;
-            var message = arguments.ContainsKey(MessageArgKeyName) ? arguments[MessageArgKeyName] : DefaultMessage;
+            var clear = arguments.ContainsKey(ClearKeyName) ? true : false;
 
-            Test("Display System : {0}", displaySystemName);
-            Test("Severity : {0}", severity);
-            Test("Messages : {0}", message);
+            var context = new ExecutionContext() 
+            { 
+                Name = arguments.ContainsKey(SystemNameArgKeyName) ? arguments[SystemNameArgKeyName] : DefaultDisplaySystemName, 
+                Severity = arguments.ContainsKey(SeverityArgKeyName) ? arguments[SeverityArgKeyName] : WarningBlockName, 
+                Message = arguments.ContainsKey(MessageArgKeyName) ? arguments[MessageArgKeyName] : "",
+                Clear = clear,
+                ClearOnly = clear && arguments.Count == 1
+            };
 
-            return new ExecutionContext() { Name = displaySystemName, Severity = severity, Message = message };
+            Test(context.ToString());
+
+            return context;
         }
 
         /// <summary>
@@ -304,12 +332,14 @@
         /// </summary>
         /// <param name="context">context to use</param>
         /// <returns>context data</returns>
-        private ExecutionContext InitializeResources(ExecutionContext context)
+        private void InitializeResources(ExecutionContext context)
         {
             if (initialized)
             {
-                return context;
+                return;
             }
+
+            executionCount = 0;
 
             var controllerName = Controller.CustomName.ToUpper();
             var systemName = context.Name;
@@ -331,7 +361,8 @@
                 && !d.CustomName.Contains(InfoBlockName)
                 && !d.CustomName.Contains(WarningBlockName)
                 && !d.CustomName.Contains(ErrorBlockName)
-                && !d.CustomName.Contains(FatalBlockName));
+                && !d.CustomName.Contains(FatalBlockName)
+                && !d.CustomName.Contains(ControlDebugDisplayName));
 
             Test("Default Displays with System Name {0}:{1}", systemName, defaultDisplays.Count);
             WriteNamesToTest(defaultDisplays);
@@ -382,8 +413,6 @@
             }
 
             Test("Log4SEControl Init Complete");
-
-            return context;
         }
 
         private Dictionary<string, string> ParseArguments(string args)
@@ -498,6 +527,7 @@
 
         private void ClearDisplays()
         {
+            Test("Clearing all displays");
             ClearDebugDisplays();
             ClearInfoDisplays();
             ClearWarningDisplays();
@@ -652,10 +682,10 @@
 
             for (var i = 0; i < blocks.Count; i++)
             {
-                separator = i == 0 ? "" : ", ";
-
                 var block = blocks[i];
                 message = message + separator + block.CustomName;
+
+                separator = " ";
             }
 
             Test(message);
