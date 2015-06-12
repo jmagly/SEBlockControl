@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\build.properties" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -40,35 +41,35 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Sandbox.Common">
-      <HintPath>F:\SteamLibrary\SteamApps\common\SpaceEngineers\Bin64\Sandbox.Common.dll</HintPath>
+      <HintPath>$(SEInstallLocation)Sandbox.Common.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="VRage">
-      <HintPath>F:\SteamLibrary\SteamApps\common\SpaceEngineers\Bin64\VRage.dll</HintPath>
+      <HintPath>$(SEInstallLocation)VRage.dll</HintPath>
     </Reference>
     <Reference Include="VRage.Audio">
-      <HintPath>F:\SteamLibrary\SteamApps\common\SpaceEngineers\Bin64\VRage.Audio.dll</HintPath>
+      <HintPath>$(SEInstallLocation)VRage.Audio.dll</HintPath>
     </Reference>
     <Reference Include="VRage.Game">
-      <HintPath>F:\SteamLibrary\SteamApps\common\SpaceEngineers\Bin64\VRage.Game.dll</HintPath>
+      <HintPath>$(SEInstallLocation)VRage.Game.dll</HintPath>
     </Reference>
     <Reference Include="VRage.Input">
-      <HintPath>F:\SteamLibrary\SteamApps\common\SpaceEngineers\Bin64\VRage.Input.dll</HintPath>
+      <HintPath>$(SEInstallLocation)VRage.Input.dll</HintPath>
     </Reference>
     <Reference Include="VRage.Library">
-      <HintPath>F:\SteamLibrary\SteamApps\common\SpaceEngineers\Bin64\VRage.Library.dll</HintPath>
+      <HintPath>$(SEInstallLocation)VRage.Library.dll</HintPath>
     </Reference>
     <Reference Include="VRage.Math">
-      <HintPath>F:\SteamLibrary\SteamApps\common\SpaceEngineers\Bin64\VRage.Math.dll</HintPath>
+      <HintPath>$(SEInstallLocation)VRage.Math.dll</HintPath>
     </Reference>
     <Reference Include="VRage.Native">
-      <HintPath>F:\SteamLibrary\SteamApps\common\SpaceEngineers\Bin64\VRage.Native.dll</HintPath>
+      <HintPath>$(SEInstallLocation)VRage.Native.dll</HintPath>
     </Reference>
     <Reference Include="VRage.Render">
-      <HintPath>F:\SteamLibrary\SteamApps\common\SpaceEngineers\Bin64\VRage.Render.dll</HintPath>
+      <HintPath>$(SEInstallLocation)VRage.Render.dll</HintPath>
     </Reference>
     <Reference Include="VRage.Render11">
-      <HintPath>F:\SteamLibrary\SteamApps\common\SpaceEngineers\Bin64\VRage.Render11.dll</HintPath>
+      <HintPath>$(SEInstallLocation)VRage.Render11.dll</HintPath>
     </Reference>
   </ItemGroup>
   <Choose>
