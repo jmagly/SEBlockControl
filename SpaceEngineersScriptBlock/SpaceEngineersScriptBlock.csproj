@@ -37,49 +37,33 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Sandbox.Common">
-      <HintPath>$(SEInstallLocation)Sandbox.Common.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="VRage">
-      <HintPath>$(SEInstallLocation)VRage.dll</HintPath>
-    </Reference>
-    <Reference Include="VRage.Audio">
-      <HintPath>$(SEInstallLocation)VRage.Audio.dll</HintPath>
-    </Reference>
-    <Reference Include="VRage.Game">
-      <HintPath>$(SEInstallLocation)VRage.Game.dll</HintPath>
-    </Reference>
-    <Reference Include="VRage.Input">
-      <HintPath>$(SEInstallLocation)VRage.Input.dll</HintPath>
-    </Reference>
-    <Reference Include="VRage.Library">
-      <HintPath>$(SEInstallLocation)VRage.Library.dll</HintPath>
-    </Reference>
-    <Reference Include="VRage.Math">
-      <HintPath>$(SEInstallLocation)VRage.Math.dll</HintPath>
-    </Reference>
-    <Reference Include="VRage.Native">
-      <HintPath>$(SEInstallLocation)VRage.Native.dll</HintPath>
-    </Reference>
-    <Reference Include="VRage.Render">
-      <HintPath>$(SEInstallLocation)VRage.Render.dll</HintPath>
-    </Reference>
-    <Reference Include="VRage.Render11">
-      <HintPath>$(SEInstallLocation)VRage.Render11.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="AirLockControl.cs" />
-    <Compile Include="BlockScriptBase.cs" />
     <Compile Include="CommandForwardControl.cs" />
     <Compile Include="Log4SEControl.cs" />
-    <Compile Include="IBlockScript.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="BSET.Domain">
+      <HintPath>..\packages\SEBSET.1.0.0\lib\net45\BSET.Domain.dll</HintPath>
+    </Reference>
+    <Reference Include="BSET.Mocks">
+      <HintPath>..\packages\SEBSET.1.0.0\lib\net45\BSET.Mocks.dll</HintPath>
+    </Reference>
+    <Reference Include="BSET.ScriptDevelopment">
+      <HintPath>..\packages\SEBSET.1.0.0\lib\net45\BSET.ScriptDevelopment.dll</HintPath>
+    </Reference>
+    <Reference Include="BSET.Testing">
+      <HintPath>..\packages\SEBSET.1.0.0\lib\net45\BSET.Testing.dll</HintPath>
+    </Reference>
+    <Reference Include="Moq">
+      <HintPath>..\packages\Moq.4.2.1502.0911\lib\net40\Moq.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

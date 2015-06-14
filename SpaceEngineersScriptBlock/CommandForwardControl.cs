@@ -4,27 +4,26 @@
     using System.Collections.Generic;
     using System.Collections;
     using System.Text;
+
+    using VRage;
+    using VRageMath;
+
     using Sandbox.ModAPI.Ingame;
     using Sandbox.ModAPI.Interfaces;
     using Sandbox.Common.ObjectBuilders;
-    using VRage;
-    using VRageMath;
+
+    using BSET.ScriptDevelopment;
     
     /// <summary>
-    /// Control code to allow for forwarding of a recieved argument list to a specified programmable block(s)
+    /// Control code to allow for forwarding of a received argument list to a specified programmable block(s)
     /// </summary>
     public class CommandForwardControl : BlockScriptBase
     {
-        public CommandForwardControl(IMyGridTerminalSystem gts) : base(gts) { }
+        public CommandForwardControl(IMyGridTerminalSystem gts, IMyProgrammableBlock executingBlock) : base(gts, executingBlock) { }
 
         public override void MainMethod(string argument)
         {
             Main(argument);
-        }
-
-        public override void CleanUp()
-        {
-            base.CleanUp();
         }
 
         #region Game Code

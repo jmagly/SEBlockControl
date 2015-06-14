@@ -4,27 +4,26 @@
     using System.Collections.Generic;
     using System.Collections;
     using System.Text;
+
+    using VRage;
+    using VRageMath;
+
     using Sandbox.ModAPI.Ingame;
     using Sandbox.ModAPI.Interfaces;
     using Sandbox.Common.ObjectBuilders;
-    using VRage;
-    using VRageMath;
+
+    using BSET.ScriptDevelopment;
 
     /// <summary>
     /// Text Panel control code that simulates the behavior of OSS projects like log4net and log4j
     /// </summary>
     public class Log4SEControl : BlockScriptBase 
     {
-        public Log4SEControl(IMyGridTerminalSystem gts) : base(gts) { }
+        public Log4SEControl(IMyGridTerminalSystem gts, IMyProgrammableBlock executingBlock) : base(gts, executingBlock) { }
 
         public override void MainMethod(string argument)
         {
             Main(argument);
-        }
-
-        public override void CleanUp()
-        {
-            base.CleanUp();
         }
 
         #region Game Code
@@ -131,9 +130,8 @@
 
         private const string InitializeParameterName = "--initialize";
 
-        private const string ControlDebugDisplayName = "SEBlockControl::Test::Log4SEControl";
-
-        private const string DefaultDisplaySystemName = "LCD";
+        public const string DefaultDisplaySystemName = "LCD";
+        public const string ControlDebugDisplayName = "SEBlockControl::Test::Log4SEControl";
 
         public const string DebugBlockName = MessageSeverity.Debug;
         public const string InfoBlockName = MessageSeverity.Info;
@@ -356,7 +354,7 @@
                     continue;
                 }
 
-                var logDisplays = panels.FindAll(d => d.CustomName.Contains(DebugBlockName));
+                var logDisplays = panels.FindAll(d => d.CustomName.Contains(kvp.Key));
                 logDisplays.AddRange(defaultDisplays);
 
                 Test("{0} displays found:{1}", kvp.Key, logDisplays.Count);

@@ -4,28 +4,26 @@
     using System.Collections.Generic;
     using System.Collections;
     using System.Text;
-    using Sandbox.ModAPI.Ingame;
-    using Sandbox.ModAPI.Interfaces;
-    using Sandbox.Common;
+
     using VRage;
     using VRageMath;
+
+    using Sandbox.ModAPI.Ingame;
+    using Sandbox.ModAPI.Interfaces;
+    using Sandbox.Common.ObjectBuilders;
+
+    using BSET.ScriptDevelopment;
 
     /// <summary>
     /// Simple airlock control script with 3 state control and pressure checks to prevent bad access. 
     /// </summary>
     public class AirlockControl : BlockScriptBase
     {
-        public AirlockControl(IMyGridTerminalSystem gts) : base(gts) { }
+        public AirlockControl(IMyGridTerminalSystem gts, IMyProgrammableBlock executingBlock) : base(gts, executingBlock) { }
 
         public override void MainMethod(string argument)
         {
             Main(argument);
-        }
-
-        public override void CleanUp()
-        {
-            State = AirlockState.SystemOffline;
-            base.CleanUp();
         }
 
         #region Game Code
